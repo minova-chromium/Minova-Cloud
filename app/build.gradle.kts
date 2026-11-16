@@ -6,8 +6,8 @@ android {
         applicationId = "com.minova.cloud"
         minSdk = 26
         targetSdk = 37
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.1.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "CLOUD_ORIGIN", "\"https://cloud.project-minova.com\"")
     }
@@ -21,7 +21,10 @@ android {
             keyPassword = System.getenv("MINOVA_KEYSTORE_PASSWORD")
         }
     }
-    buildTypes { getByName("release") { isMinifyEnabled = false; signingConfig = signingConfigs.getByName("release") } }
+    buildTypes {
+        getByName("release") { isMinifyEnabled = false; signingConfig = signingConfigs.getByName("release") }
+        getByName("debug") { applicationIdSuffix = ".debug"; versionNameSuffix = "-debug" }
+    }
 }
 dependencies {
     implementation("androidx.work:work-runtime:2.12.0")

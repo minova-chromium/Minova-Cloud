@@ -1,39 +1,49 @@
-# Minova Cloud for Android
+# Minova Cloud
 
-A native Android app connected to the same Minova Cloud server as the website. The app supports Android 8.0 and newer. Its production origin is fixed to https://cloud.project-minova.com, with normal Android certificate validation and HTTPS required.
+[![Build Minova Cloud](https://github.com/minova-chromium/Minova-Cloud/actions/workflows/android.yml/badge.svg)](https://github.com/minova-chromium/Minova-Cloud/actions/workflows/android.yml)
 
-## Use
+Your files, photos, and videos, together on Android and the web. A native Android app with the Minova graphite and cyan identity, private sharing, queued uploads, and opt-in photo/video backup.
 
-Download the signed APK from https://cloud.project-minova.com/android and install it on your phone. Sign in using the same Minova account as the website. New accounts are invitation-only; verified Android App Links open email invitations in the app when Android permits the association.
+**[Download the latest stable APK](https://github.com/minova-chromium/Minova-Cloud/releases/latest/download/Minova-Cloud.apk)** · **[All releases](https://github.com/minova-chromium/Minova-Cloud/releases)** · **[Website](https://cloud.project-minova.com/android)**
 
-Files shows the full folder tree. Photos and Videos collect media from all your private folders. Browse, search, upload, preview, save a copy to your phone, create folders, rename, star, share with members, remove sharing access, move to trash, and restore. The More tab provides sharing, trash, connected devices, email invitations for the owner, backup settings, updates/help, and sign out. No Tailscale app is required.
+Android 8.0 or newer. Install over your existing Minova Cloud app to retain your account and settings. Sign in with your existing Minova username and password.
 
-Open library views refresh about every 10 seconds while the app is active; the website refreshes about every 15 seconds. Both clients use the same accounts, permission checks, files, shares, and trash. This is a shared live cloud library, with explicit downloads for separate local copies; it does not automatically mirror arbitrary phone folders or delete phone originals when cloud files are removed.
+## Release workflow
 
-## Automatic backup
+1. Push a change to `main`. GitHub automatically compiles and checks the app, keeps a preview APK, and prepares a signed draft release for a new app version.
+2. Review the APK in **Actions** or **Releases**. Drafts stay off the website.
+3. Publish the draft in GitHub Releases. The website's download button immediately follows GitHub's latest stable release.
 
-Backup is off by default. Open More > Automatic photo & video backup, grant Android media access, choose photos/videos and network settings, and enable it. Wi-Fi/unmetered networking is the default. Android schedules scans at 15-minute intervals when battery/network conditions permit, so this is not an instant camera watcher. Selected-media permissions limit backup to the media Android makes available. Android battery restrictions or force-stop can delay work; reopen the app after force-stop.
+For a completely automatic publication, push a matching `vX.Y.Z` tag or run **Build Minova Cloud** with **Publish this version after checks pass** selected. The workflow uploads APKs and checksums before marking the release public, so the latest link does not point to an unfinished build.
 
-The first scan includes existing allowed media. Media goes to Phone backups/Android-<device>/Photos or Videos/YYYY-MM, preserving the original filename. Collisions receive a number and never overwrite another file. SQLite receipts skip already completed backups. If a transfer completed before its receipt was saved, a server-side SHA-256 check avoids a duplicate. A cloud deletion stays deleted until the user explicitly restores or uploads it again; backup does not delete phone originals.
+Before a new version, increase **both** `versionCode` and `versionName` in `app/build.gradle.kts`. Published releases are retained and never overwritten by the workflow. If the current version is already published, a push still produces a preview artifact but requires a version increase before another draft can be created. Pull requests compile and run lint without access to the release signing secrets.
 
-Uploads are queued with WorkManager and resume after interruption while the server upload session remains available. Restarting the server or a session expiring after 30 minutes may restart the affected file. Files larger than 256 MB use Android's foreground transfer service. Every native upload declares a SHA-256 checksum, which the server verifies before publishing the file. The per-file limit is 20 GB. Android can stop background/foreground work according to its own quotas; the app retries eligible interrupted transfers.
+Every stable release includes `Minova-Cloud.apk`, a versioned APK, `SHA256SUMS.txt`, and public `release.json` metadata. The unversioned asset name is intentional: GitHub's `/releases/latest/download/Minova-Cloud.apk` URL always resolves to the current stable APK. Older builds remain in GitHub's release history.
 
-## Authentication and privacy
+## What stays synchronized
 
-The app exchanges a normal password sign-in for a device credential valid for 90 days. Passwords are not stored. The device credential is encrypted with an Android Keystore AES-GCM key and excluded from Android backups. The server stores only a hash. Credentials survive the server's weekly restart and can be revoked from Connected devices on either client. Expired/revoked credentials require a new sign-in. Each work request is bound to its originating Minova user, so a later account switch cannot send its uploads to another account.
+Files, Photos, Videos, folders, names, stars, shares, and trash use the same account and storage as the website. Open Android views refresh about every 10 seconds; the website refreshes about every 15 seconds. Downloads create explicit local copies; the app does not automatically mirror arbitrary phone folders or remove phone originals when cloud files are deleted.
 
-The app has no analytics, ads, third-party accounts, broad all-files access, or shared-storage write permission. Manual uploads use the Android document picker. Camera/media backup requests Android's media permissions only when the user asks. Large transfers show a generic private notification without filenames. Cached previews are held in app-private cache and are exposed to a chosen external viewer only through temporary FileProvider permission.
+## Phone backup
 
-## Build and update
+Backup is off by default. Open **More → Photo & video backup**, grant media access, choose Photos/Videos and network preferences, then enable it. Unmetered/Wi-Fi networking is the default. Android schedules scans at 15-minute intervals when battery/network conditions allow it; selected-media permissions restrict which items are available. Reopen the app after force-stop.
 
-Open this folder in Android Studio or run Build Minova Cloud.cmd. Build-Minova-Cloud.ps1 uses Android Studio's JDK and the Gradle wrapper. The SDK path is in ignored local.properties. AGP 9.2.0, Gradle 9.4.1, compile/target SDK 37, and AndroidX WorkManager 2.12.0 are pinned.
+The first scan includes existing allowed media. Backups preserve original filenames under `Phone backups/Android-<device>/Photos` or `Videos/YYYY-MM`. Collisions are numbered without overwriting. SQLite receipts and SHA-256 checks avoid duplicate recovery uploads. Queued transfers resume when possible; large files use Android's foreground transfer service and remain subject to Android's background quotas. The per-file limit is 20 GB.
 
-The release key is generated only once under %LOCALAPPDATA%/Minova Cloud/Android Signing. Its password is protected by Windows DPAPI for this Windows account. Back up that directory securely; losing the signing key prevents compatible updates. Never replace it for an update. Increase versionCode and versionName in app/build.gradle.kts for each new public APK, and update the release filename/metadata in Build-Minova-Cloud.ps1 and the server download page. The script never prints the password. Releases contains the signed APK, SHA256SUMS.txt, and public signing-certificate metadata.
+## Privacy and device access
 
-The debug network config permits only localhost, 127.0.0.1, and 10.0.2.2 HTTP for isolated emulator tests; the release APK disallows cleartext. A debug-only origin preference is used by the integration test. Release code ignores that preference.
+Passwords are not stored. A normal sign-in creates a 90-day app credential encrypted with Android Keystore AES-GCM. The server stores only its hash. This credential survives server restarts and can be revoked from Connected devices on either client. Work requests are bound to the originating Minova user. The app has no ads or analytics and requests media access only for backup; manual uploads use Android's document picker.
 
-## Verification
+The production origin is fixed to `https://cloud.project-minova.com` with normal certificate validation and HTTPS required. The debug-only loopback origin is for isolated emulator tests and is ignored by release builds. Debug builds use a separate package so testing cannot replace a signed production installation.
 
-The server's npm test suite checks private recursive media libraries, pagination, cross-account isolation, device token persistence/revocation, CSRF checks, hashed device storage, and checksum failures, along with existing file/sharing/email tests.
+## Local builds and signing
 
-CloudIntegrationTest runs on an Android emulator against .qa/preview.mjs at port 4178 through adb reverse. It uses only synthetic local files and its own MediaStore test image. It checks Keystore storage, a 3 MiB interrupted upload and exact byte hash after resume, rename, a real WorkManager backup, receipt-loss recovery without duplicates, and cloud trash/restore visibility. The test account never touches I:/Online Cloud. Do not run this test against production; it deliberately uses a fixed synthetic test account and loopback origin.
+Open this folder in Android Studio or run `Build Minova Cloud.cmd`. The PowerShell build script reads the version from Gradle. Keep `local.properties` private for your SDK path. The Gradle wrapper and dependency versions are pinned.
+
+The existing production signing key is retained under `%LOCALAPPDATA%/Minova Cloud/Android Signing`; its password is protected with Windows DPAPI. Back it up securely. GitHub builds use the same key through encrypted Actions secrets `MINOVA_KEYSTORE_BASE64` and `MINOVA_KEYSTORE_PASSWORD`. The key and password are never committed or attached to release artifacts. `signing-certificate.sha256` contains only the public certificate fingerprint for verification.
+
+The server itself, account data, user files, Gmail credentials, and deployment configuration remain on the owner's PC. This repository contains the Android client and its build/release workflow.
+
+## Validation
+
+GitHub runs Android compilation, lint, signature checks, and release packaging. `CloudIntegrationTest` is an optional emulator test against an isolated Minova server fixture on port 4178 through `adb reverse`; it uses a fixed synthetic account and never targets production. It covers Keystore storage, interrupted upload recovery with matching SHA-256, backup deduplication after receipt loss, rename/trash/restore visibility, and photo orientation. Do not point that test at a live user account.

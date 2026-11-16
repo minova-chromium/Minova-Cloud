@@ -1,6 +1,10 @@
 param([switch]$Debug)
 $ErrorActionPreference='Stop'
 $projectPath=$PSScriptRoot
+$appConfiguration=Get-Content -LiteralPath (Join-Path $projectPath 'app\build.gradle.kts') -Raw
+$version=[regex]::Match($appConfiguration,'versionName\s*=\s*"([^"]+)"').Groups[1].Value
+$versionCode=[int][regex]::Match($appConfiguration,'versionCode\s*=\s*(\d+)').Groups[1].Value
+if(-not $version -or $versionCode -le 0){throw 'Set versionName and versionCode before building.'}
 if(-not $env:JAVA_HOME){$env:JAVA_HOME='C:\Program Files\Android\Android Studio\jbr'}
 if(-not (Test-Path -LiteralPath (Join-Path $env:JAVA_HOME 'bin\java.exe'))){throw 'Install Android Studio or set JAVA_HOME to a JDK 17 or newer.'}
 if($Debug){& (Join-Path $projectPath 'gradlew.bat') -p $projectPath :app:assembleDebug --console=plain;if($LASTEXITCODE -ne 0){throw 'Debug build failed'};exit}
@@ -26,14 +30,15 @@ try {
     & (Join-Path $projectPath 'gradlew.bat') -p $projectPath :app:assembleRelease --console=plain
     if($LASTEXITCODE -ne 0){throw 'Release build failed'}
     $releasePath=Join-Path $projectPath 'releases';New-Item -ItemType Directory -Force -Path $releasePath | Out-Null
-    $apkPath=Join-Path $releasePath 'Minova-Cloud-1.0.0.apk'
+    $apkName="Minova-Cloud-$version.apk"
+    $apkPath=Join-Path $releasePath $apkName
     Copy-Item -LiteralPath (Join-Path $projectPath 'app\build\outputs\apk\release\app-release.apk') -Destination $apkPath -Force
     $checksum=(Get-FileHash -LiteralPath $apkPath -Algorithm SHA256).Hash.ToLowerInvariant()
-    "$checksum  Minova-Cloud-1.0.0.apk" | Set-Content -LiteralPath (Join-Path $releasePath 'SHA256SUMS.txt')
+    "$checksum  $apkName" | Set-Content -LiteralPath (Join-Path $releasePath 'SHA256SUMS.txt')
     $certificate=& (Join-Path $env:JAVA_HOME 'bin\keytool.exe') -list -v -keystore $keyPath -storepass:env MINOVA_KEYSTORE_PASSWORD -alias minova-cloud
     $fingerprint=($certificate | Select-String '^\s*SHA256:\s*(.*)$').Matches.Groups[1].Value.Trim()
     if(-not $fingerprint){throw 'Could not read the app signing certificate fingerprint.'}
-    @{version='1.0.0';versionCode=1;package='com.minova.cloud';sha256=$checksum;certificateSha256=$fingerprint;file='Minova-Cloud-1.0.0.apk'} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $releasePath 'release.json')
+    @{version=$version;versionCode=$versionCode;package='com.minova.cloud';sha256=$checksum;certificateSha256=$fingerprint;file=$apkName} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $releasePath 'release.json')
     Write-Output "Release APK ready: $apkPath"
 } finally {
     [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($pointer)
