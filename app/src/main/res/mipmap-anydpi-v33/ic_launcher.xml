@@ -1,0 +1,1 @@
+<adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android"><background android:drawable="@color/cloud_icon_background"/><foreground android:drawable="@drawable/minova_cloud_foreground"/><monochrome android:drawable="@drawable/minova_cloud_notification"/></adaptive-icon>

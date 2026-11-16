@@ -12,7 +12,7 @@ final class TransferWork {
         manager.createNotificationChannel(new android.app.NotificationChannel("cloud-transfers","Cloud uploads and backup",android.app.NotificationManager.IMPORTANCE_LOW));
         android.content.Intent intent=new android.content.Intent(context,MainActivity.class);
         android.app.PendingIntent open=android.app.PendingIntent.getActivity(context,0,intent,android.app.PendingIntent.FLAG_IMMUTABLE|android.app.PendingIntent.FLAG_UPDATE_CURRENT);
-        android.app.Notification notification=new android.app.Notification.Builder(context,"cloud-transfers").setSmallIcon(R.drawable.minova_icon).setContentTitle("Minova Cloud transfer").setContentText("Uploading files to your private cloud").setVisibility(android.app.Notification.VISIBILITY_PRIVATE).setOngoing(true).setContentIntent(open).build();
+        android.app.Notification notification=new android.app.Notification.Builder(context,"cloud-transfers").setSmallIcon(R.drawable.minova_cloud_notification).setContentTitle("Minova Cloud transfer").setContentText("Uploading files to your private cloud").setVisibility(android.app.Notification.VISIBILITY_PRIVATE).setOngoing(true).setContentIntent(open).build();
         return android.os.Build.VERSION.SDK_INT>=29?new ForegroundInfo(1042,notification,android.content.pm.ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC):new ForegroundInfo(1042,notification);
     }
     static final Semaphore LOCK=new Semaphore(1);

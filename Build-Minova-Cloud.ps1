@@ -33,12 +33,13 @@ try {
     $apkName="Minova-Cloud-$version.apk"
     $apkPath=Join-Path $releasePath $apkName
     Copy-Item -LiteralPath (Join-Path $projectPath 'app\build\outputs\apk\release\app-release.apk') -Destination $apkPath -Force
+    Copy-Item -LiteralPath $apkPath -Destination (Join-Path $releasePath 'Minova-Cloud.apk') -Force
     $checksum=(Get-FileHash -LiteralPath $apkPath -Algorithm SHA256).Hash.ToLowerInvariant()
     "$checksum  $apkName" | Set-Content -LiteralPath (Join-Path $releasePath 'SHA256SUMS.txt')
     $certificate=& (Join-Path $env:JAVA_HOME 'bin\keytool.exe') -list -v -keystore $keyPath -storepass:env MINOVA_KEYSTORE_PASSWORD -alias minova-cloud
     $fingerprint=($certificate | Select-String '^\s*SHA256:\s*(.*)$').Matches.Groups[1].Value.Trim()
     if(-not $fingerprint){throw 'Could not read the app signing certificate fingerprint.'}
-    @{version=$version;versionCode=$versionCode;package='com.minova.cloud';sha256=$checksum;certificateSha256=$fingerprint;file=$apkName} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $releasePath 'release.json')
+    @{version=$version;versionCode=$versionCode;package='com.minova.cloud';sha256=$checksum;certificateSha256=$fingerprint;file='Minova-Cloud.apk'} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $releasePath 'release.json') -Encoding utf8NoBOM
     Write-Output "Release APK ready: $apkPath"
 } finally {
     [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($pointer)

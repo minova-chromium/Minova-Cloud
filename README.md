@@ -8,6 +8,14 @@ Your files, photos, and videos, together on Android and the web. A native Androi
 
 Android 8.0 or newer. Install over your existing Minova Cloud app to retain your account and settings. Sign in with your existing Minova username and password.
 
+## Built-in updates — 1.3.0
+
+The app checks the latest published stable GitHub release on opening and periodically in the background. It automatically downloads updates on Wi-Fi/unmetered networking by default and offers an in-app install prompt and optional notification. Open **More > App updates** to check, download, install, or change the network preference, even without signing in to Minova. Android still requires approval to install an APK; the app opens its installation permission setting when needed.
+
+The updater accepts only the official release service, a matching SHA-256, the production package and version, and the same actual APK signing certificate as the installed app. A failed check keeps your current app. Install 1.3.0 once over the existing app to enable built-in updates; future published releases are offered inside Minova. Your account, settings, backup receipts and files are retained. Debug builds disable production update checks.
+
+This release also introduces the approved Cloud logo, using the original Minova M at the smaller approved size.
+
 ## Release workflow
 
 1. Push a change to `main`. GitHub automatically compiles and checks the app, keeps a preview APK, and prepares a signed draft release for a new app version.

@@ -8,6 +8,7 @@ local.properties
 *.log
 releases/
 /app/src/androidTest/assets/qa-video.mp4
+/app/src/androidTest/assets/qa-update.apk
 
 
 .work/
