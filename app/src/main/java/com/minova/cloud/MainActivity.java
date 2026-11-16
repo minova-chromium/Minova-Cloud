@@ -71,8 +71,8 @@ public final class MainActivity extends Activity {
         root=column();root.setBackgroundColor(NIGHT);setContentView(root);
         if(Build.VERSION.SDK_INT>=30){getWindow().setDecorFitsSystemWindows(false);root.setOnApplyWindowInsetsListener((v,insets)->{android.graphics.Insets inset=insets.getInsets(WindowInsets.Type.systemBars());v.setPadding(0,inset.top,0,inset.bottom);return insets;});}else root.setFitsSystemWindows(true);
         header=row();header.setPadding(dp(22),dp(12),dp(22),dp(12));
-        ImageView logo=new ImageView(this);logo.setImageResource(R.drawable.minova_cloud_lockup);logo.setScaleType(ImageView.ScaleType.FIT_CENTER);logo.setContentDescription("Minova");header.addView(logo,new LinearLayout.LayoutParams(dp(121),dp(34)));
-        View divider=new View(this);divider.setBackgroundColor(LINE);LinearLayout.LayoutParams line=new LinearLayout.LayoutParams(dp(1),dp(22));line.setMargins(dp(15),0,dp(12),0);header.addView(divider,line);header.addView(text("Cloud",13,MUTED),new LinearLayout.LayoutParams(0,-2,1));add(root,header,70);
+        ImageView logo=new ImageView(this);logo.setImageResource(R.drawable.minova_cloud_lockup);logo.setScaleType(ImageView.ScaleType.FIT_CENTER);logo.setContentDescription("Minova Cloud");header.addView(logo,new LinearLayout.LayoutParams(dp(121),dp(46)));
+        View divider=new View(this);divider.setBackgroundColor(LINE);LinearLayout.LayoutParams line=new LinearLayout.LayoutParams(dp(1),dp(22));line.setMargins(dp(15),0,dp(12),0);header.addView(divider,line);header.addView(new View(this),new LinearLayout.LayoutParams(0,1,1));add(root,header,74);
     }
 
     private void showRoot(){started=false;if(session==null)showLogin();else renderWorkspace();}
