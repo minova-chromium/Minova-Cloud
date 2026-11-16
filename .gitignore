@@ -1,0 +1,14 @@
+.gradle/
+local.properties
+**/build/
+.signing/
+*.jks
+*.keystore
+
+*.log
+releases/
+
+
+.work/
+/*-preview.*
+
