@@ -1,0 +1,17 @@
+package com.minova.cloud;
+import android.content.Context;import android.graphics.*;import android.view.*;import android.widget.ImageView;
+final class ZoomPhotoView extends ImageView {
+    final Matrix matrix=new Matrix();final GestureDetector gestures;final ScaleGestureDetector scale;final Runnable previous,next;float zoom=1,panX,panY;boolean pinched;Runnable changed=()->{};
+    ZoomPhotoView(Context context,Runnable previous,Runnable next){super(context);this.previous=previous;this.next=next;setScaleType(ScaleType.MATRIX);setContentDescription("Photo. Swipe left or right to browse. Pinch or double-tap to zoom.");setFocusable(true);
+        scale=new ScaleGestureDetector(context,new ScaleGestureDetector.SimpleOnScaleGestureListener(){@Override public boolean onScale(ScaleGestureDetector detector){zoomTo(zoom*detector.getScaleFactor(),detector.getFocusX(),detector.getFocusY());return true;}});
+        gestures=new GestureDetector(context,new GestureDetector.SimpleOnGestureListener(){@Override public boolean onDown(android.view.MotionEvent e){return true;}@Override public boolean onDoubleTap(MotionEvent e){zoomTo(zoom>1?1:2.5f,e.getX(),e.getY());return true;}@Override public boolean onSingleTapConfirmed(MotionEvent e){performClick();return true;}@Override public boolean onScroll(MotionEvent a,MotionEvent b,float dx,float dy){if(zoom>1&&!scale.isInProgress()){panX-=dx;panY-=dy;transform();}return true;}@Override public boolean onFling(MotionEvent a,MotionEvent b,float vx,float vy){if(a!=null&&zoom==1&&!pinched&&Math.abs(b.getX()-a.getX())>MinovaUi.dp(context,55)&&Math.abs(vx)>Math.abs(vy)*1.2f){if(vx<0)next.run();else previous.run();return true;}return false;}});
+    }
+    void zoomTo(float value,float x,float y){float target=Math.max(1,Math.min(5,value)),ratio=target/zoom;panX=(x-getWidth()/2f)-(x-getWidth()/2f-panX)*ratio;panY=(y-getHeight()/2f)-(y-getHeight()/2f-panY)*ratio;zoom=target;if(zoom==1)panX=panY=0;transform();changed.run();}
+    void fit(){zoomTo(1,getWidth()/2f,getHeight()/2f);}
+    @Override public void setImageBitmap(Bitmap bitmap){super.setImageBitmap(bitmap);zoom=1;panX=panY=0;transform();changed.run();}
+    @Override protected void onSizeChanged(int w,int h,int oldW,int oldH){super.onSizeChanged(w,h,oldW,oldH);transform();}
+    void transform(){if(getDrawable()==null||getWidth()==0||getHeight()==0)return;float width=getDrawable().getIntrinsicWidth(),height=getDrawable().getIntrinsicHeight();if(width<=0||height<=0)return;float fit=Math.min(getWidth()/width,getHeight()/height),factor=fit*zoom;float maxX=Math.max(0,(width*factor-getWidth())/2),maxY=Math.max(0,(height*factor-getHeight())/2);panX=Math.max(-maxX,Math.min(maxX,panX));panY=Math.max(-maxY,Math.min(maxY,panY));matrix.setScale(factor,factor);matrix.postTranslate((getWidth()-width*factor)/2+panX,(getHeight()-height*factor)/2+panY);setImageMatrix(matrix);}
+    @Override public boolean onTouchEvent(MotionEvent event){if(event.getActionMasked()==MotionEvent.ACTION_DOWN)pinched=false;if(event.getPointerCount()>1)pinched=true;scale.onTouchEvent(event);gestures.onTouchEvent(event);return true;}
+    @Override public boolean performClick(){super.performClick();return true;}
+    @Override public boolean onGenericMotionEvent(MotionEvent event){if(event.getAction()==MotionEvent.ACTION_SCROLL){float delta=event.getAxisValue(MotionEvent.AXIS_VSCROLL);if(zoom>1)zoomTo(zoom*(delta>0?1.2f:.8f),getWidth()/2f,getHeight()/2f);else if(delta<0)next.run();else if(delta>0)previous.run();return true;}return super.onGenericMotionEvent(event);}
+}

@@ -12,7 +12,7 @@ Android 8.0 or newer. Install over your existing Minova Cloud app to retain your
 
 The app checks the latest published stable GitHub release on opening and periodically in the background. It automatically downloads updates on Wi-Fi/unmetered networking by default and offers an in-app install prompt and optional notification. Open **More > App updates** to check, download, install, or change the network preference, even without signing in to Minova. Android still requires approval to install an APK; the app opens its installation permission setting when needed.
 
-The updater accepts only the official release service, a matching SHA-256, the production package and version, and the same actual APK signing certificate as the installed app. A failed check keeps your current app. Install 1.3.0 once over the existing app to enable built-in updates; future published releases are offered inside Minova. Your account, settings, backup receipts and files are retained. Debug builds disable production update checks.
+The updater accepts only the official release service, a matching SHA-256, the production package and version, and the same actual APK signing certificate as the installed app. A failed check keeps your current app. Install 1.3.0 or newer once over the existing app to enable built-in updates; future published releases are offered inside Minova. Your account, settings, backup receipts and files are retained. Debug builds disable production update checks.
 
 This release also introduces the approved Cloud logo, using the original Minova M at the smaller approved size.
 
@@ -36,7 +36,7 @@ Files, Photos, Videos, folders, names, stars, shares, and trash use the same acc
 
 Backup is off by default. Open **More → Photo & video backup**, grant media access, choose Photos/Videos and network preferences, then enable it. Unmetered/Wi-Fi networking is the default. Android schedules scans at 15-minute intervals when battery/network conditions allow it; selected-media permissions restrict which items are available. Reopen the app after force-stop.
 
-The first scan includes existing allowed media. Backups preserve original filenames under `Phone backups/Android-<device>/Photos` or `Videos/YYYY-MM`. Collisions are numbered without overwriting. SQLite receipts and SHA-256 checks avoid duplicate recovery uploads. Queued transfers resume when possible; large files use Android's foreground transfer service and remain subject to Android's background quotas. The per-file limit is 20 GB.
+The first scan includes existing allowed media. Backups preserve original filenames under `Pictures/Phone backups/Android-<device>/Photos/YYYY-MM` or `Videos/YYYY-MM`. The Photos tab includes a **Phone backups** album. Existing legacy backups are moved by the server without overwriting files; sharing and stars follow the move. Cleanup receipts are updated only after the moved cloud bytes match the original checksum. Collisions are numbered without overwriting. SQLite receipts and SHA-256 checks avoid duplicate recovery uploads. Queued transfers resume when possible; large files use Android's foreground transfer service and remain subject to Android's background quotas. The per-file limit is 20 GB.
 
 ## Gallery, phone access and free space
 
@@ -74,3 +74,7 @@ GitHub runs Android compilation, lint, signature checks, and release packaging. 
 For the full eight-test suite, run `node test/fixture.mjs` in this checkout with the sibling server available, forward emulator port 4178 with adb, and supply a nonpersonal MP4 at ignored `app/src/androidTest/assets/qa-video.mp4`. Grant media permissions and all-files access only to the isolated debug test package. Never grant test permissions to, or uninstall, a production installation. See VALIDATION.md for scope and prerequisites.
 
 The Cloud header uses the supplied two-row white/cyan wordmark. Its lettering is retained exactly; transparent padding is trimmed for display. The approved cloud/M launcher icon is retained.
+
+## Photo browsing — 1.4.0
+
+Tap a cloud photo to open the full-screen viewer. Swipe or use previous/next buttons, pinch or double-tap to zoom, drag a zoomed photo, and use Fit to return to the full image. Adjacent photos preload; the viewer keeps a bounded memory cache and cancels obsolete requests. Save to phone and Open with always use the selected photo. Photos uploaded from the Photos tab go into Pictures, and Videos uploads go into Videos. The phone gallery opened from More also uses those media folders.

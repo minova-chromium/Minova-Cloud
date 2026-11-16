@@ -28,6 +28,7 @@ public final class BackupWorker extends Worker {
         if(!TransferWork.LOCK.tryAcquire())return Result.retry();
         int uploaded=0;
         try(BackupStore store=new BackupStore(context)){
+            api.prepareBackupAlbum();
             if(!permitted(context,false)&&!permitted(context,true)){TransferWork.status(context,user,"Allow photo and video access in Backup settings to continue.",true);return Result.failure();}
             String device=settings.getString("device",null);if(device==null){device=UUID.randomUUID().toString().substring(0,8);settings.edit().putString("device",device).commit();}
             UploadEngine engine=new UploadEngine(api,()->isStopped()||!settings.getBoolean("enabled",false));
@@ -49,7 +50,7 @@ public final class BackupWorker extends Worker {
                         String name=UploadEngine.cleanName(cursor.getString(1));
                         TransferWork.status(context,user,"Preparing backup · "+name,false);
                         String hash=engine.checksum(uri);String month=new SimpleDateFormat("yyyy-MM",Locale.US).format(new Date(cursor.getLong(4)*1000));
-                        String folder="Phone backups/Android-"+device+"/"+(video?"Videos":"Photos")+"/"+month;
+                        String folder="Pictures/Phone backups/Android-"+device+"/"+(video?"Videos":"Photos")+"/"+month;
                         String target=folder+"/"+name;
                         api.ensureFolder(folder);
                         target=engine.upload(uri,new UploadEngine.Info(name,size),target,hash,true,(filename,sent,total)->TransferWork.status(context,user,"Backing up "+filename+" · "+(total==0?100:sent*100/total)+"%",false));

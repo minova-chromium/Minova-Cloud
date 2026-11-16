@@ -3,6 +3,7 @@ package com.minova.cloud;
 import android.content.Context;
 import android.os.Build;
 import org.json.JSONObject;
+import org.json.JSONArray;
 import java.io.*;
 import java.net.*;
 import java.nio.charset.StandardCharsets;
@@ -76,6 +77,16 @@ final class CloudApi {
     }
     String fileRoute(JSONObject item,JSONObject share,boolean inline){return "/api/download?path="+encode(item.optString("path"))+(share==null?"":"&share="+encode(share.optString("id")))+(inline?"&inline=1":"");}
     Map<String,String> mediaHeaders(){Map<String,String> headers=new HashMap<>();headers.put("Authorization","Bearer "+session.optString("token"));return headers;}
+    private JSONArray backupMappings=new JSONArray();
+    void prepareBackupAlbum()throws Exception{backupMappings=request("/api/backup-album","POST",new JSONObject()).getJSONArray("mappings");}
+    String resolveBackupTarget(String target,String hash,long size)throws Exception{
+        if(target==null||!target.startsWith("Phone backups/"))return target;
+        // Historical roots may have been merged into separate preserved albums.
+        // Only matching bytes authorize updating a receipt or cleanup target.
+        for(int i=backupMappings.length()-1;i>=0;i--){JSONObject mapping=backupMappings.getJSONObject(i);String from=mapping.getString("from"),to=mapping.getString("to");if(!from.equals("Phone backups")||!to.startsWith("Pictures/Phone backups"))continue;
+            String candidate=to+target.substring(from.length());try{if(SafeOffload.matches(this,candidate,hash,size))return candidate;}catch(ApiException error){if(error.status!=404)throw error;}
+        }return target;
+    }
     void ensureFolder(String path)throws Exception{
         String built="";for(String part:path.split("/")){if(part.isEmpty())continue;built=built.isEmpty()?part:built+"/"+part;
             try{request("/api/files?path="+encode(built),"GET",null);}catch(ApiException error){if(error.status!=404)throw error;try{request("/api/folders","POST",new JSONObject().put("path",built));}catch(ApiException exists){if(exists.status!=409)throw exists;}}}

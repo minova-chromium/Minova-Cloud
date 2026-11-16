@@ -23,6 +23,7 @@ public class CloudIntegrationTest {
         Bitmap original=Bitmap.createBitmap(40,20,Bitmap.Config.ARGB_8888);original.eraseColor(Color.CYAN);try(OutputStream output=new FileOutputStream(photo)){original.compress(Bitmap.CompressFormat.JPEG,100,output);}original.recycle();
         androidx.exifinterface.media.ExifInterface metadata=new androidx.exifinterface.media.ExifInterface(photo);metadata.setAttribute(androidx.exifinterface.media.ExifInterface.TAG_ORIENTATION,Integer.toString(androidx.exifinterface.media.ExifInterface.ORIENTATION_ROTATE_90));metadata.saveAttributes();
         Bitmap decoded=PhotoBitmaps.decode(CloudApi.read(new FileInputStream(photo),1024*1024),700);assertNotNull(decoded);assertEquals(20,decoded.getWidth());assertEquals(40,decoded.getHeight());decoded.recycle();
+        Bitmap fromFile=PhotoBitmaps.decodeFile(photo,700);assertNotNull(fromFile);assertEquals(20,fromFile.getWidth());assertEquals(40,fromFile.getHeight());fromFile.recycle();
     }
     @Test public void androidUploadsResumeAndBackupMatchesTheWebsite()throws Exception {
         Context context=InstrumentationRegistry.getInstrumentation().getTargetContext();
@@ -53,7 +54,7 @@ public class CloudIntegrationTest {
         while(System.currentTimeMillis()<deadline){state=manager.getWorkInfoById(work.getId()).get(10,TimeUnit.SECONDS).getState();if(state.isFinished())break;Thread.sleep(250);}
         assertEquals("Automatic backup must finish using only the synthetic photo",WorkInfo.State.SUCCEEDED,state);
         JSONArray photos=api.request("/api/library?kind=photos&q="+CloudApi.encode(photoName.substring(0,photoName.lastIndexOf('.'))),"GET",null).getJSONArray("items");
-        assertEquals(1,photos.length());assertTrue(photos.getJSONObject(0).getString("path").startsWith("Phone backups/"));
+        assertEquals(1,photos.length());assertTrue(photos.getJSONObject(0).getString("path").startsWith("Pictures/Phone backups/"));
         String backedUp=photos.getJSONObject(0).getString("path");
         assertTrue(backedUp.endsWith("/"+photoName));
         try(BackupStore receipts=new BackupStore(context)){assertEquals(1,receipts.getWritableDatabase().delete("receipts","user=? AND target=?",new String[]{user,backedUp}));}

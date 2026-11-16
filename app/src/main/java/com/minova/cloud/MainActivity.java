@@ -37,10 +37,12 @@ public final class MainActivity extends Activity {
     private String view="files",path="",query="",invitation;
     private int serial=0,libraryLimit=100;
     private boolean loading=false,started=false,foreground=false;
-    private AlertDialog dialog;
+    private Dialog dialog;
+    private List<JSONObject> visibleItems=new ArrayList<>();
+    private String album="";
     private final Runnable refreshLoop=new Runnable(){@Override public void run(){if(foreground&&(dialog==null||!dialog.isShowing()))AppUpdater.prompt(MainActivity.this);if(foreground&&session!=null&&started){if(dialog==null||!dialog.isShowing())load(false);updateTransferStatus();}handler.postDelayed(this,10000);}};
     @Override public void onCreate(Bundle state){super.onCreate(state);if(Build.VERSION.SDK_INT>=33)getOnBackInvokedDispatcher().registerOnBackInvokedCallback(android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT,this::goBack);readInvitation(getIntent());session=SecureSession.load(this);showRoot();handler.post(refreshLoop);AppUpdater.schedule(this);}
-    @Override protected void onNewIntent(Intent intent){super.onNewIntent(intent);setIntent(intent);readInvitation(intent);if(invitation!=null){session=null;showRoot();}}
+    @Override protected void onNewIntent(Intent intent){super.onNewIntent(intent);setIntent(intent);readInvitation(intent);if(invitation!=null){if(dialog!=null)dialog.dismiss();session=null;showRoot();}}
     private void readInvitation(Intent intent){Uri uri=intent.getData();if(uri!=null&&"https".equals(uri.getScheme())&&"cloud.project-minova.com".equals(uri.getHost())&&uri.getFragment()!=null)invitation=Uri.parse("https://cloud.project-minova.com/?"+uri.getFragment()).getQueryParameter("invite");}
     @Override protected void onResume(){super.onResume();foreground=true;if(started&&session!=null)load(false);handler.postDelayed(()->AppUpdater.prompt(this),1200);}
     @Override protected void onPause(){foreground=false;super.onPause();}
@@ -89,7 +91,7 @@ public final class MainActivity extends Activity {
         });add(form,submit[0],50);space(form,22);add(form,text("New here? Open your invitation email to create an account.\n\ncloud.project-minova.com",12,MUTED),-2);space(form,20);add(form,button("Open Minova home",false,()->openWebsite("https://project-minova.com/")),-2);
     }
     private EditText input(String hint,boolean password){EditText field=new EditText(this);field.setHint(hint);field.setTextColor(WHITE);field.setHintTextColor(MUTED);field.setTextSize(15);field.setSingleLine(true);field.setPadding(dp(14),dp(8),dp(14),dp(8));field.setTypeface(Typeface.create("sans-serif",Typeface.NORMAL));field.setBackground(MinovaUi.surface(this,SURFACE,LINE,6));if(password)field.setInputType(android.text.InputType.TYPE_CLASS_TEXT|android.text.InputType.TYPE_TEXT_VARIATION_PASSWORD);return field;}
-    private void navigate(String target){view=target;path="";share=null;query="";libraryLimit=100;renderWorkspace();}
+    private void navigate(String target){album="";view=target;path="";share=null;query="";libraryLimit=100;renderWorkspace();}
 
     private void renderWorkspace(){
         if(session==null){showLogin();return;}serial++;loading=false;lastLibrarySignature="";base();started=true;
@@ -109,6 +111,7 @@ public final class MainActivity extends Activity {
         }
         FrameLayout refresh=iconButton("refresh",false,"Refresh files",()->load(true));LinearLayout.LayoutParams refreshParams=new LinearLayout.LayoutParams(dp(44),dp(48));refreshParams.leftMargin=dp(8);tools.addView(refresh,refreshParams);add(body,tools,-2);space(body,15);
         if(!path.isEmpty()||share!=null){LinearLayout crumb=row();crumb.addView(glyph("back",CYAN,15));TextView location=text("  "+(path.isEmpty()?"Shared folder":path),11,CYAN);location.setMaxLines(1);location.setEllipsize(TextUtils.TruncateAt.START);crumb.addView(location,new LinearLayout.LayoutParams(0,-2,1));crumb.setPadding(0,dp(4),0,dp(13));crumb.setOnClickListener(v->goBack());add(body,crumb,-2);}
+        if(isMedia()){LinearLayout albums=row();for(String key:new String[]{"","phone-backups"}){Button choice=button(key.isEmpty()?(view.equals("photos")?"All photos":"All videos"):"Phone backups",album.equals(key),()->{album=key;libraryLimit=100;lastLibrarySignature="";renderWorkspace();});LinearLayout.LayoutParams layout=new LinearLayout.LayoutParams(0,dp(44),1);layout.setMargins(0,0,dp(8),0);albums.addView(choice,layout);}add(body,albums,-2);space(body,12);}
         libraryScroll=new ScrollView(this);libraryScroll.setFillViewport(true);libraryScroll.setClipToPadding(false);content=column();content.setPadding(0,0,0,dp(24));libraryScroll.addView(content);body.addView(libraryScroll,new LinearLayout.LayoutParams(-1,0,1));addBottom();load(true);
     }
 
@@ -125,12 +128,12 @@ public final class MainActivity extends Activity {
 
     private void load(boolean force){
         if(session==null||view.equals("more")||content==null||loading&&!force)return;
-        int current=++serial;loading=true;String currentView=view,currentPath=path,currentQuery=query;JSONObject currentShare=share;CloudApi api=new CloudApi(this,session);
+        int current=++serial;loading=true;String currentView=view,currentPath=path,currentQuery=query,currentAlbum=album;JSONObject currentShare=share;CloudApi api=new CloudApi(this,session);
         if(force){content.removeAllViews();add(content,text("Opening your space…",14,MUTED),-2);}
         io.execute(()->{try{
             JSONObject result;
             if(currentView.equals("photos")||currentView.equals("videos")){
-                JSONArray all=new JSONArray();boolean more=false;for(int offset=0;offset<libraryLimit;offset+=100){JSONObject page=api.request("/api/library?kind="+currentView+"&q="+CloudApi.encode(currentQuery)+"&offset="+offset+"&limit=100","GET",null);JSONArray items=page.getJSONArray("items");for(int i=0;i<items.length();i++)all.put(items.get(i));more=page.optBoolean("hasMore");if(!more)break;}result=new JSONObject().put("items",all).put("hasMore",more);
+                JSONArray all=new JSONArray();boolean more=false;for(int offset=0;offset<libraryLimit;offset+=100){JSONObject page=api.request("/api/library?kind="+currentView+"&q="+CloudApi.encode(currentQuery)+"&album="+currentAlbum+"&offset="+offset+"&limit=100","GET",null);JSONArray items=page.getJSONArray("items");for(int i=0;i<items.length();i++)all.put(items.get(i));more=page.optBoolean("hasMore");if(!more)break;}result=new JSONObject().put("items",all).put("hasMore",more);
             }else if(currentView.equals("trash"))result=api.request("/api/trash","GET",null);
             else if(currentView.equals("shared")&&currentShare==null){result=api.request("/api/shares","GET",null);JSONArray incoming=new JSONArray(),items=result.getJSONArray("items");for(int i=0;i<items.length();i++){JSONObject item=items.getJSONObject(i);if(item.optBoolean("incoming"))incoming.put(item.put("_share",new JSONObject().put("id",item.getString("id")).put("owner",item.getJSONObject("owner"))));}result.put("items",incoming);}
             else if(!currentQuery.isEmpty()||currentView.equals("starred"))result=api.request("/api/search?q="+CloudApi.encode(currentQuery)+(currentView.equals("starred")?"&filter=starred":""),"GET",null);
@@ -148,6 +151,7 @@ public final class MainActivity extends Activity {
     private void renderItems(JSONObject result,CloudApi api){
         int scrollPosition=libraryScroll==null?0:libraryScroll.getScrollY();content.removeAllViews();JSONArray array=result.optJSONArray("items");List<JSONObject> items=new ArrayList<>();if(array!=null)for(int i=0;i<array.length();i++)items.add(array.optJSONObject(i));
         if(!isMedia())Collections.sort(items,(a,b)->{int directories=Boolean.compare(b.optBoolean("isDirectory"),a.optBoolean("isDirectory"));return directories!=0?directories:a.optString("name").compareToIgnoreCase(b.optString("name"));});
+        visibleItems=new ArrayList<>(items);
         if(view.equals("files")&&path.isEmpty()&&share==null&&query.isEmpty())welcomePanel();
         LinearLayout caption=row();String countLabel=items.size()+" "+(isMedia()?view:"items")+(result.optBoolean("hasMore")?" shown":"");TextView label=eyebrow(query.isEmpty()?(isMedia()?"YOUR COLLECTION":"ALL FILES"):"SEARCH RESULTS");caption.addView(label,new LinearLayout.LayoutParams(0,-2,1));caption.addView(text(countLabel,10,MUTED));
         if(view.equals("files")&&share==null&&query.isEmpty()){FrameLayout folder=iconButton("new-folder",false,"New folder",this::newFolder);folder.setBackground(MinovaUi.touch(this,NIGHT,0,6));LinearLayout.LayoutParams params=new LinearLayout.LayoutParams(dp(42),dp(36));params.leftMargin=dp(6);caption.addView(folder,params);}add(content,caption,36);space(content,9);
@@ -195,11 +199,11 @@ public final class MainActivity extends Activity {
         download(item,false);
     }
     private void photoPreview(JSONObject item){
-        CloudApi api=new CloudApi(this,session);JSONObject selected,selectedShare=itemShare(item);
-        try{selected=resolved(item);}catch(Exception error){message(error.getMessage());return;}
-        ImageView image=new ImageView(this);image.setScaleType(ImageView.ScaleType.FIT_CENTER);LinearLayout box=column();box.addView(image,new LinearLayout.LayoutParams(-1,dp(360)));
-        dialog=new AlertDialog.Builder(this).setTitle(item.optString("name")).setView(box).setPositiveButton("Close",null).setNeutralButton("Save to phone",(d,w)->download(item,true)).setNegativeButton("Open with…",(d,w)->download(item,false)).show();
-        io.execute(()->{try{HttpURLConnection connection=api.connection(api.fileRoute(selected,selectedShare,false),"GET",true);byte[] bytes;try{if(connection.getResponseCode()!=200)throw new IOException("The photo is no longer available.");bytes=CloudApi.read(connection.getInputStream(),32*1024*1024);}finally{connection.disconnect();}Bitmap bitmap=PhotoBitmaps.decode(bytes,2000);if(bitmap==null)throw new IOException("This photo needs another viewer. Use Open with…");runOnUiThread(()->image.setImageBitmap(bitmap));}catch(Exception error){runOnUiThread(()->message(error.getMessage()));}});
+        try{List<PhotoGalleryDialog.Photo> photos=new ArrayList<>();int selected=-1;
+            for(JSONObject candidate:visibleItems)if(!candidate.optBoolean("isDirectory")&&candidate.optString("name").toLowerCase(Locale.ROOT).matches(".*\\.(jpg|jpeg|png|webp|gif|avif|heic|heif|bmp|tif|tiff|dng)$")){if(candidate==item)selected=photos.size();photos.add(new PhotoGalleryDialog.Photo(candidate,resolved(candidate),itemShare(candidate)));}
+            if(selected<0){selected=photos.size();photos.add(new PhotoGalleryDialog.Photo(item,resolved(item),itemShare(item)));}
+            dialog=new PhotoGalleryDialog(this,new CloudApi(this,session),photos,selected,this::download);dialog.show();
+        }catch(Exception error){message(error.getMessage());}
     }
     private void actions(JSONObject item){
         boolean incoming=itemShare(item)!=null;ArrayList<String> labels=new ArrayList<>();if(view.equals("trash"))labels.add("Restore");else{if(!item.optBoolean("isDirectory")){labels.add("Open");labels.add("Save to phone");}if(!incoming){labels.add("Share with a member");labels.add(item.optBoolean("starred")?"Remove star":"Star");labels.add("Rename");labels.add("Move to trash");}}
@@ -229,10 +233,11 @@ public final class MainActivity extends Activity {
         HttpURLConnection connection=api.connection(api.fileRoute(item,selectedShare,false),"GET",true);try{int status=connection.getResponseCode();if(status!=200)throw new IOException("The file is no longer available or your device needs to sign in again.");try(InputStream stream=connection.getInputStream()){byte[] bytes=new byte[128*1024];int count;long total=0;while((count=stream.read(bytes))!=-1){total+=count;if(total>UploadEngine.MAX_SIZE)throw new IOException("File exceeds the 20 GB limit.");output.write(bytes,0,count);}}}finally{connection.disconnect();}
     }
     private static String mime(String name){String extension=name.contains(".")?name.substring(name.lastIndexOf('.')+1).toLowerCase(Locale.ROOT):"";String type=android.webkit.MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);return type==null?"application/octet-stream":type;}
-    private void chooseUpload(){new AlertDialog.Builder(this).setTitle("Upload to Minova Cloud").setItems(new String[]{"Choose from phone gallery","Browse phone files","Android file picker"},(d,which)->{if(which==0)startActivity(new Intent(this,PhoneGalleryActivity.class).putExtra("path",isMedia()?"":path).putExtra("video",view.equals("videos")));else if(which==1)startActivity(new Intent(this,PhoneFilesActivity.class).putExtra("path",isMedia()?"":path));else chooseDocument();}).show();}
+    private String uploadFolder(){return view.equals("photos")?"Pictures":view.equals("videos")?"Videos":path;}
+    private void chooseUpload(){new AlertDialog.Builder(this).setTitle("Upload to Minova Cloud").setItems(new String[]{"Choose from phone gallery","Browse phone files","Android file picker"},(d,which)->{if(which==0)startActivity(new Intent(this,PhoneGalleryActivity.class).putExtra("path",uploadFolder()).putExtra("video",view.equals("videos")));else if(which==1)startActivity(new Intent(this,PhoneFilesActivity.class).putExtra("path",uploadFolder()));else chooseDocument();}).show();}
     private void chooseDocument(){Intent pick=new Intent(Intent.ACTION_OPEN_DOCUMENT).addCategory(Intent.CATEGORY_OPENABLE).setType(view.equals("photos")?"image/*":view.equals("videos")?"video/*":"*/*");pick.putExtra(Intent.EXTRA_ALLOW_MULTIPLE,true);pick.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION|Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION);startActivityForResult(pick,201);}
     @Override protected void onActivityResult(int request,int result,Intent data){super.onActivityResult(request,result,data);if(result!=RESULT_OK||data==null||session==null)return;
-        if(request==201){ArrayList<Uri> uris=new ArrayList<>();if(data.getClipData()!=null){for(int i=0;i<data.getClipData().getItemCount();i++)uris.add(data.getClipData().getItemAt(i).getUri());}else if(data.getData()!=null)uris.add(data.getData());String user=new CloudApi(this,session).userId();for(Uri uri:uris){try{getContentResolver().takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION);}catch(SecurityException ignored){}TransferWork.upload(this,user,uri,isMedia()?"":path);}TransferWork.status(this,user,"Queued "+uris.size()+" upload"+(uris.size()==1?"":"s"),false);message("Uploads queued. You can keep using Cloud.");updateTransferStatus();}
+        if(request==201){ArrayList<Uri> uris=new ArrayList<>();if(data.getClipData()!=null){for(int i=0;i<data.getClipData().getItemCount();i++)uris.add(data.getClipData().getItemAt(i).getUri());}else if(data.getData()!=null)uris.add(data.getData());String user=new CloudApi(this,session).userId();for(Uri uri:uris){try{getContentResolver().takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION);}catch(SecurityException ignored){}TransferWork.upload(this,user,uri,uploadFolder());}TransferWork.status(this,user,"Queued "+uris.size()+" upload"+(uris.size()==1?"":"s"),false);message("Uploads queued. You can keep using Cloud.");updateTransferStatus();}
         if(request==202&&data.getData()!=null&&pendingSaveItem!=null){Uri destination=data.getData();JSONObject item=pendingSaveItem,selectedShare=pendingSaveShare;pendingSaveItem=null;CloudApi api=new CloudApi(this,session);message("Saving to your phone…");io.execute(()->{try(OutputStream output=getContentResolver().openOutputStream(destination,"w")){if(output==null)throw new IOException("Could not open the chosen destination.");copyFile(api,item,selectedShare,output);runOnUiThread(()->message("Saved to phone"));}catch(Exception error){runOnUiThread(()->message(error.getMessage()));}});}
     }
 

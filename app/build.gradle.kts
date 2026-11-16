@@ -6,8 +6,8 @@ android {
         applicationId = "com.minova.cloud"
         minSdk = 26
         targetSdk = 37
-        versionCode = 4
-        versionName = "1.3.0"
+        versionCode = 5
+        versionName = "1.4.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         buildConfigField("String", "CLOUD_ORIGIN", "\"https://cloud.project-minova.com\"")
     }

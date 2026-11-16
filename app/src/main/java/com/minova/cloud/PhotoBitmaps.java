@@ -7,6 +7,12 @@ import androidx.exifinterface.media.ExifInterface;
 import java.io.ByteArrayInputStream;
 
 final class PhotoBitmaps {
+    static Bitmap decodeFile(java.io.File file,int maximum){
+        BitmapFactory.Options options=new BitmapFactory.Options();options.inJustDecodeBounds=true;BitmapFactory.decodeFile(file.getAbsolutePath(),options);options.inSampleSize=1;
+        while(Math.max(options.outWidth,options.outHeight)/options.inSampleSize>maximum)options.inSampleSize*=2;
+        options.inJustDecodeBounds=false;Bitmap bitmap=BitmapFactory.decodeFile(file.getAbsolutePath(),options);if(bitmap==null)return null;
+        try{ExifInterface metadata=new ExifInterface(file);Matrix matrix=new Matrix();if(metadata.isFlipped())matrix.postScale(-1,1);matrix.postRotate(metadata.getRotationDegrees());if(!matrix.isIdentity()){Bitmap oriented=Bitmap.createBitmap(bitmap,0,0,bitmap.getWidth(),bitmap.getHeight(),matrix,true);if(oriented!=bitmap)bitmap.recycle();return oriented;}}catch(Exception ignored){}return bitmap;
+    }
     static Bitmap decode(byte[] bytes,int maximum){
         BitmapFactory.Options options=new BitmapFactory.Options();options.inJustDecodeBounds=true;
         BitmapFactory.decodeByteArray(bytes,0,bytes.length,options);options.inSampleSize=1;

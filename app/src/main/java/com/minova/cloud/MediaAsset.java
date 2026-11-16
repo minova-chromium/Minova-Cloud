@@ -35,5 +35,5 @@ final class MediaAsset {
     }
     String assetKey(){return uri+"|"+size+"|"+modified;}
     boolean sameSource(MediaAsset other){return uri.equals(other.uri)&&size==other.size&&modified==other.modified&&generation==other.generation;}
-    String folder(Context context,String user){android.content.SharedPreferences preferences=context.getSharedPreferences("backup-"+user,0);String device=preferences.getString("device",null);if(device==null){device=UUID.randomUUID().toString().substring(0,8);if(!preferences.edit().putString("device",device).commit())throw new IllegalStateException("Could not save this phone's backup identity.");}String month=new SimpleDateFormat("yyyy-MM",Locale.US).format(new Date(added*1000));return "Phone backups/Android-"+device+"/"+(video?"Videos":"Photos")+"/"+month;}
+    String folder(Context context,String user){android.content.SharedPreferences preferences=context.getSharedPreferences("backup-"+user,0);String device=preferences.getString("device",null);if(device==null){device=UUID.randomUUID().toString().substring(0,8);if(!preferences.edit().putString("device",device).commit())throw new IllegalStateException("Could not save this phone's backup identity.");}String month=new SimpleDateFormat("yyyy-MM",Locale.US).format(new Date(added*1000));return "Pictures/Phone backups/Android-"+device+"/"+(video?"Videos":"Photos")+"/"+month;}
 }

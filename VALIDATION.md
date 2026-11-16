@@ -1,4 +1,4 @@
-# Android 1.3.0 validation
+# Android 1.4.0 validation
 
 Eight instrumentation tests passed on an isolated Android API 37 emulator using a fresh synthetic Minova server on port 4178:
 
@@ -24,3 +24,11 @@ Protected cleanup requires Android 11 or newer. Android controls full/selected p
 All twelve instrumentation tests passed on the isolated API 37 emulator: the previous eight checks plus four updater checks. These validate metadata identity and immutable version URLs; trusted HTTPS host restrictions; acceptance of the real signed 1.3.0 APK and rejection of incorrect versions, signing certificates, changed bytes and invalid archives; and the account-independent update activity and scoped FileProvider URI. No installation permission or installer approval dialog was accepted automatically. Debug checks never contact the production updater.
 
 The updater archive test requires ignored `app/src/androidTest/assets/qa-update.apk`, copied from the signed 1.3.0 release APK. This fixture never ships in the application. The release APK keeps the existing production signing identity. Release compilation, debug test compilation and Android lint passed.
+
+## Photo gallery and album validation — 1.4.0
+
+Fourteen instrumentation tests passed on the isolated API 37 emulator: the previous twelve checks plus full-screen photo navigation and legacy backup migration. The gallery check covers real HTTP downloads, previous/next, rapid navigation without stale images replacing the selection, fit/zoom, an injected swipe in the test-owned app, the current-photo save callback and cleanup of network jobs on dismissal. EXIF orientation is checked for byte-array and file previews. Original images download to private temporary files with a size bound, then decode at a bounded resolution; the bitmap cache is limited to 32 MB.
+
+The migration check verifies old cleanup targets and backup receipts against matching SHA-256 at the moved location, reuses an existing copy without a duplicate upload, and rejects a later historical copy with different bytes. Constructing a deletion request does not remove media; no Android consent request is accepted by a test. Phone originals remain until the user completes the existing explicit removal flow.
+
+The website also passed desktop arrows/keyboard/wheel/zoom checks and mobile touch swipe/pinch checks. Server tests verify account isolation, sharing, collision preservation and recovery after an interrupted move metadata commit. Android release build, test compilation and lint pass.
