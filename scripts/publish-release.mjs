@@ -27,9 +27,9 @@ if(latest){
   const asset=latest.assets.find(item=>item.name==='release.json');
   if(asset){const response=await fetch(asset.browser_download_url);if(!response.ok)throw new Error('Could not verify the previous release version.');const previous=await response.json();if(versionCode<=previous.versionCode)throw new Error('Increase versionCode before preparing a new release.');}
 }
-const body=[`Minova Cloud ${version}`, '', '### Installation', 'Download **Minova-Cloud.apk** and install it over your existing app. Your account and settings are retained.', '', '### Included', '- Files, Photos, and Videos with the Minova visual system.', '- Private sharing, queued uploads, and opt-in photo/video backup.', '', 'SHA-256 checksums and public app metadata are attached.'].join('\n');
+const body=[`Minova Cloud ${version}`, '', '### Installation', 'Download **Minova-Cloud.apk** and install it over your existing app. Your account and settings are retained.', '', '### Included', '- Files, Photos, and Videos with the Minova visual system.', '- Private sharing, queued uploads, and opt-in photo/video backup.', '- On this phone gallery and optional shared-file browsing.', '- Verified phone-space cleanup with separate in-app and Android confirmation (Android 11+).' , '', 'SHA-256 checksums and public app metadata are attached.'].join('\n');
 if(!release)release=await api('/releases','POST',{tag_name:tag,target_commitish:process.env.GITHUB_SHA,name:`Minova Cloud ${version}`,body,draft:true,prerelease:false});
-else release=await api(`/releases/${release.id}`,'PATCH',{target_commitish:process.env.GITHUB_SHA,body});
+else release=await api(`/releases/${release.id}`,'PATCH',{tag_name:tag,target_commitish:process.env.GITHUB_SHA,name:`Minova Cloud ${version}`,body,draft:true,prerelease:false});
 for(const name of ['Minova-Cloud.apk',`Minova-Cloud-${version}.apk`,'SHA256SUMS.txt','release.json']){
   const old=release.assets.find(asset=>asset.name===name);
   if(old)await api(`/releases/assets/${old.id}`,'DELETE');

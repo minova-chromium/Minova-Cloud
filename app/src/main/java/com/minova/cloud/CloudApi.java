@@ -23,7 +23,7 @@ final class CloudApi {
     HttpURLConnection connection(String route,String method,boolean authenticate)throws Exception{
         if(!route.startsWith("/api/"))throw new IOException("Unsupported Cloud request.");
         HttpURLConnection connection=(HttpURLConnection)new URL(origin()+route).openConnection();
-        connection.setInstanceFollowRedirects(false);connection.setConnectTimeout(20000);connection.setReadTimeout(120000);connection.setRequestMethod(method);
+        connection.setInstanceFollowRedirects(false);connection.setConnectTimeout(20000);connection.setReadTimeout(route.startsWith("/api/checksum?")?10*60*1000:120000);connection.setRequestMethod(method);
         connection.setRequestProperty("Accept","application/json");
         if(authenticate&&session!=null){connection.setRequestProperty("Authorization","Bearer "+session.getString("token"));connection.setRequestProperty("X-Minova-CSRF",session.getString("csrf"));}
         return connection;

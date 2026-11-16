@@ -11,5 +11,6 @@ final class BackupStore extends SQLiteOpenHelper {
     @Override public void onCreate(SQLiteDatabase db){db.execSQL("CREATE TABLE receipts (user TEXT NOT NULL, asset TEXT NOT NULL, target TEXT NOT NULL, PRIMARY KEY(user,asset))");}
     @Override public void onUpgrade(SQLiteDatabase db,int oldVersion,int newVersion){}
     boolean contains(String user,String asset){try(Cursor cursor=getReadableDatabase().rawQuery("SELECT 1 FROM receipts WHERE user=? AND asset=?",new String[]{user,asset})){return cursor.moveToFirst();}}
+    String target(String user,String asset){try(Cursor cursor=getReadableDatabase().rawQuery("SELECT target FROM receipts WHERE user=? AND asset=?",new String[]{user,asset})){return cursor.moveToFirst()?cursor.getString(0):null;}}
     void record(String user,String asset,String target){ContentValues values=new ContentValues();values.put("user",user);values.put("asset",asset);values.put("target",target);getWritableDatabase().insertWithOnConflict("receipts",null,values,SQLiteDatabase.CONFLICT_REPLACE);}
 }

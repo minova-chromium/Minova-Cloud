@@ -15,6 +15,7 @@ import java.util.*;
 public final class BackupWorker extends Worker {
     public BackupWorker(Context context,WorkerParameters parameters){super(context,parameters);}
     static boolean permitted(Context context,boolean video){
+        if(PhoneAccess.allFiles())return true;
         if(Build.VERSION.SDK_INT<33)return context.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE)==PackageManager.PERMISSION_GRANTED;
         if(context.checkSelfPermission(video?Manifest.permission.READ_MEDIA_VIDEO:Manifest.permission.READ_MEDIA_IMAGES)==PackageManager.PERMISSION_GRANTED)return true;
         return Build.VERSION.SDK_INT>=34&&context.checkSelfPermission(Manifest.permission.READ_MEDIA_VISUAL_USER_SELECTED)==PackageManager.PERMISSION_GRANTED;

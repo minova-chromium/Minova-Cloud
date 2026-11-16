@@ -24,11 +24,16 @@ final class TransferWork {
         WorkManager.getInstance(context).enqueueUniqueWork("uploads-"+user,ExistingWorkPolicy.APPEND_OR_REPLACE,request);
     }
     static void schedule(Context context,String user,boolean enabled,boolean wifi){
+        // Scheduling backup never schedules or approves phone deletion.
         WorkManager manager=WorkManager.getInstance(context);String name="backup-"+user;
         if(!enabled){manager.cancelUniqueWork(name);manager.cancelUniqueWork("backup-now-"+user);return;}
         Data data=new Data.Builder().putString("user",user).build();
         PeriodicWorkRequest work=new PeriodicWorkRequest.Builder(BackupWorker.class,15,TimeUnit.MINUTES).setInputData(data).setConstraints(constraints(wifi)).setBackoffCriteria(BackoffPolicy.EXPONENTIAL,15,TimeUnit.SECONDS).addTag(tag(user)).build();
         manager.enqueueUniquePeriodicWork(name,ExistingPeriodicWorkPolicy.UPDATE,work);
+    }
+    static void offload(Context context,String user,String batch){
+        OneTimeWorkRequest request=new OneTimeWorkRequest.Builder(OffloadWorker.class).setInputData(new Data.Builder().putString("user",user).putString("batch",batch).build()).setConstraints(constraints(false)).setBackoffCriteria(BackoffPolicy.EXPONENTIAL,20,TimeUnit.SECONDS).addTag(tag(user)).build();
+        WorkManager.getInstance(context).enqueueUniqueWork("phone-cleanup-"+batch,ExistingWorkPolicy.KEEP,request);
     }
     static void backupNow(Context context,String user,boolean wifi){
         OneTimeWorkRequest work=new OneTimeWorkRequest.Builder(BackupWorker.class).setInputData(new Data.Builder().putString("user",user).build()).setConstraints(constraints(wifi)).setBackoffCriteria(BackoffPolicy.EXPONENTIAL,15,TimeUnit.SECONDS).addTag(tag(user)).build();

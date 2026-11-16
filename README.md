@@ -30,9 +30,24 @@ Backup is off by default. Open **More → Photo & video backup**, grant media ac
 
 The first scan includes existing allowed media. Backups preserve original filenames under `Phone backups/Android-<device>/Photos` or `Videos/YYYY-MM`. Collisions are numbered without overwriting. SQLite receipts and SHA-256 checks avoid duplicate recovery uploads. Queued transfers resume when possible; large files use Android's foreground transfer service and remain subject to Android's background quotas. The per-file limit is 20 GB.
 
+## Gallery, phone access and free space
+
+Open **More > Phone access** to let Android grant access to all photos and videos, selected media, and optionally shared phone files. Minova cannot grant these permissions itself. Access alone never starts deletion or enables automatic backup.
+
+The **+** upload button offers **Choose from phone gallery**, **Browse phone files**, and **Android file picker**. The same phone gallery and file browser are available in More. Ordinary uploads always keep phone originals.
+
+For phone-only removal, use **More > Free up phone space** (Android 11 or newer):
+
+1. Select up to 20 photos or videos and choose **Free up phone space > Back up first**.
+2. Leave the upload queue to finish. It keeps resumable progress and reuses matching known phone-backup receipts. No background worker deletes media.
+3. Choose **Review backed-up items**. Minova re-reads each phone original, compares SHA-256 with its cloud copy, checks the current account, and confirms the source still matches.
+4. Choose **Remove phone copies**, then approve Android's removal request. Cancel either confirmation to keep phone originals. Cloud copies are retained in the private Phone backups library.
+
+Missing, changed, unverified or cross-account copies block cleanup. Verification expires after one minute; cancellation invalidates an existing proof. The app accepts only local MediaStore photo/video URIs for cleanup. Older Android versions can still browse and upload; protected cleanup is unavailable there. Removing phone copies is independent of deleting files from Minova Cloud.
+
 ## Privacy and device access
 
-Passwords are not stored. A normal sign-in creates a 90-day app credential encrypted with Android Keystore AES-GCM. The server stores only its hash. This credential survives server restarts and can be revoked from Connected devices on either client. Work requests are bound to the originating Minova user. The app has no ads or analytics and requests media access only for backup; manual uploads use Android's document picker.
+Passwords are not stored. A normal sign-in creates a 90-day app credential encrypted with Android Keystore AES-GCM. The server stores only its hash. This credential survives server restarts and can be revoked from Connected devices on either client. Work requests are bound to the originating Minova user. The app has no ads or analytics. Media access supports the phone gallery and backup. Optional Android all-files access supports the shared-storage file browser; Android still protects other apps' private folders. Android's document picker remains available without broad shared-file access.
 
 The production origin is fixed to `https://cloud.project-minova.com` with normal certificate validation and HTTPS required. The debug-only loopback origin is for isolated emulator tests and is ignored by release builds. Debug builds use a separate package so testing cannot replace a signed production installation.
 
@@ -47,3 +62,5 @@ The server itself, account data, user files, Gmail credentials, and deployment c
 ## Validation
 
 GitHub runs Android compilation, lint, signature checks, and release packaging. `CloudIntegrationTest` is an optional emulator test against an isolated Minova server fixture on port 4178 through `adb reverse`; it uses a fixed synthetic account and never targets production. It covers Keystore storage, interrupted upload recovery with matching SHA-256, backup deduplication after receipt loss, rename/trash/restore visibility, and photo orientation. Do not point that test at a live user account.
+
+For the full eight-test suite, run `node test/fixture.mjs` in this checkout with the sibling server available, forward emulator port 4178 with adb, and supply a nonpersonal MP4 at ignored `app/src/androidTest/assets/qa-video.mp4`. Grant media permissions and all-files access only to the isolated debug test package. Never grant test permissions to, or uninstall, a production installation. See VALIDATION.md for scope and prerequisites.

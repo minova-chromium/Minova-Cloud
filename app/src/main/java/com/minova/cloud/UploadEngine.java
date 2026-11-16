@@ -23,6 +23,7 @@ final class UploadEngine {
     void allowLongTransfer(){deadline=System.currentTimeMillis()+5*60*60*1000L;}
     void check()throws IOException{if(stop.stopped()||System.currentTimeMillis()>deadline)throw new InterruptedIOException("Upload paused. Android will resume it automatically.");}
     Info info(Uri uri)throws Exception{
+        if("file".equals(uri.getScheme())){File file=new File(uri.getPath());if(!file.isFile())throw new IOException("This file is no longer available.");return new Info(cleanName(file.getName()),file.length());}
         try(Cursor cursor=context.getContentResolver().query(uri,new String[]{OpenableColumns.DISPLAY_NAME,OpenableColumns.SIZE},null,null,null)){
             if(cursor!=null&&cursor.moveToFirst()){
                 String name=cursor.getString(0);long size=cursor.isNull(1)?-1:cursor.getLong(1);
